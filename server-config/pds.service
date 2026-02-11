@@ -1,0 +1,25 @@
+[Unit]
+Description=ATProto PDS (Node)
+After=network.target
+
+[Service]
+Type=simple
+User=pds
+Group=pds
+WorkingDirectory=/srv/pds/app
+
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/pds/pds.env
+
+ExecStart=/usr/bin/node /srv/pds/app/index.js
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/pds
+
+[Install]
+WantedBy=multi-user.target
