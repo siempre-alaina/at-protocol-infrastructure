@@ -1,0 +1,27 @@
+# Binaries (only at root level)
+/relay
+/test-firehose
+*.exe
+deploy/relay-linux-amd64
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files (contain secrets)
+*.env
+relay.env
+
+# Test coverage
+coverage.out
+coverage.html
+
+# Temporary files
+*.tmp
+*.log

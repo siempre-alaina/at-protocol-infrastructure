@@ -1,0 +1,39 @@
+# AT Protocol Relay - Production Configuration
+# Location: /etc/relay/relay.yaml
+# Environment variables in /etc/relay/relay.env override these settings
+
+server:
+  host: 127.0.0.1  # Listen on localhost only (nginx proxies)
+  port: 2470
+
+database:
+  # postgres_url is set via RELAY_DATABASE_POSTGRES_URL in relay.env
+  postgres_url: "postgres://relay:CHANGE_ME@localhost/relay?sslmode=disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: "5m"
+
+storage:
+  car_dir: "/srv/relay/data/cars"
+
+ingest:
+  initial_hosts:
+    - "service.dashofextra.com"
+    # Add more PDS hosts here as needed
+  worker_count: 4
+  reconnect_delay: "5s"
+  max_reconnect_delay: "5m"
+  buffer_size: 10000
+
+identity:
+  plc_url: "https://plc.directory"
+  cache_size: 100000
+  cache_ttl: "1h"
+
+firehose:
+  max_clients: 1000
+  client_buffer_size: 1000
+
+metrics:
+  enabled: true
+  port: 9091

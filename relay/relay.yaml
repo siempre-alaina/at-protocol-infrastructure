@@ -1,0 +1,37 @@
+# AT Protocol Relay Configuration
+# Environment variables override these settings (prefix: RELAY_)
+
+server:
+  host: 0.0.0.0
+  port: 2470
+
+database:
+  postgres_url: "postgres://relay:relay@localhost/relay?sslmode=disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: "5m"
+
+storage:
+  car_dir: "/srv/relay/data/cars"
+
+ingest:
+  initial_hosts:
+    - "service.dashofextra.com"
+    # Add more PDS hosts here (hostname only, no https://)
+  worker_count: 4
+  reconnect_delay: "5s"
+  max_reconnect_delay: "5m"
+  buffer_size: 10000
+
+identity:
+  plc_url: "https://plc.directory"
+  cache_size: 100000
+  cache_ttl: "1h"
+
+firehose:
+  max_clients: 1000
+  client_buffer_size: 1000
+
+metrics:
+  enabled: true
+  port: 9091

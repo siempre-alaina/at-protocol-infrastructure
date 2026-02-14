@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relay Firehose Feed</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            padding: 20px 0 30px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            background: #2a2a4a;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #666;
+        }
+        .status-dot.connected {
+            background: #4ade80;
+            box-shadow: 0 0 10px #4ade80;
+        }
+        .status-dot.connecting {
+            background: #fbbf24;
+            animation: pulse 1s infinite;
+        }
+        .status-dot.disconnected {
+            background: #ef4444;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #888;
+        }
+        .stat-value {
+            color: #fff;
+            font-weight: bold;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        .btn-secondary {
+            background: #374151;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        .feed {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .event {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 16px;
+            border-left: 4px solid #3b82f6;
+            animation: slideIn 0.3s ease;
+        }
+        .event.commit {
+            border-left-color: #3b82f6;
+        }
+        .event.identity {
+            border-left-color: #8b5cf6;
+        }
+        .event.account {
+            border-left-color: #10b981;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .event-type {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #3b82f6;
+        }
+        .event.identity .event-type {
+            background: #8b5cf6;
+        }
+        .event.account .event-type {
+            background: #10b981;
+        }
+        .event-seq {
+            font-size: 12px;
+            color: #666;
+        }
+        .event-did {
+            font-family: monospace;
+            font-size: 13px;
+            color: #60a5fa;
+            word-break: break-all;
+            margin-bottom: 8px;
+        }
+        .event-content {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #fff;
+            margin: 12px 0;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .event-record-type {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        .event-action {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: #374151;
+            color: #9ca3af;
+            margin-left: 8px;
+        }
+        .event-action.create { background: #065f46; color: #6ee7b7; }
+        .event-action.delete { background: #7f1d1d; color: #fca5a5; }
+        .event-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        .empty-state p {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Relay Firehose Feed</h1>
+            <div class="status">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Disconnected</span>
+            </div>
+            <div class="stats">
+                <div>Events: <span class="stat-value" id="eventCount">0</span></div>
+                <div>Last Seq: <span class="stat-value" id="lastSeq">-</span></div>
+            </div>
+            <div class="controls">
+                <button class="btn-primary" id="connectBtn">Connect</button>
+                <button class="btn-secondary" id="clearBtn">Clear</button>
+                <button class="btn-secondary" id="replayBtn">Replay All</button>
+            </div>
+        </header>
+
+        <div class="feed" id="feed">
+            <div class="empty-state" id="emptyState">
+                <div style="font-size: 48px;">📡</div>
+                <p>Click "Connect" to start receiving events</p>
+                <p style="font-size: 12px; margin-top: 5px;">Or "Replay All" to see past events</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const RELAY_URL = 'wss://relay.service.dashofextra.com/xrpc/com.atproto.sync.subscribeRepos';
+
+        let ws = null;
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        let eventCount = 0;
+        let lastSeq = null;
+        let seenSeqs = new Set(); // Track seen sequence numbers to prevent duplicates
+
+        // Set up button handlers after page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('connectBtn').addEventListener('click', function() {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    disconnect();
+                } else {
+                    connect(null);
+                }
+            });
+            document.getElementById('clearBtn').addEventListener('click', clearFeed);
+            document.getElementById('replayBtn').addEventListener('click', function() {
+                connect(0);
+            });
+        });
+
+        function updateStatus(status) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            const btn = document.getElementById('connectBtn');
+
+            dot.className = 'status-dot ' + status;
+
+            switch(status) {
+                case 'connected':
+                    text.textContent = 'Connected';
+                    btn.textContent = 'Disconnect';
+                    break;
+                case 'connecting':
+                    text.textContent = 'Connecting...';
+                    btn.textContent = 'Cancel';
+                    break;
+                case 'disconnected':
+                    text.textContent = 'Disconnected';
+                    btn.textContent = 'Connect';
+                    break;
+            }
+        }
+
+        function connect(cursor = null) {
+            if (ws) {
+                ws.close();
+            }
+
+            updateStatus('connecting');
+
+            let url = RELAY_URL;
+            if (cursor !== null) {
+                url += '?cursor=' + cursor;
+            }
+
+            ws = new WebSocket(url);
+
+            ws.onopen = () => {
+                updateStatus('connected');
+                document.getElementById('emptyState')?.remove();
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    addEvent(data);
+                } catch (e) {
+                    console.error('Failed to parse event:', e);
+                }
+            };
+
+            ws.onclose = () => {
+                updateStatus('disconnected');
+                ws = null;
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                alert('Connection failed. Check browser console for details.');
+                updateStatus('disconnected');
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            updateStatus('disconnected');
+        }
+
+        function replayAll() {
+            connect(0);
+        }
+
+        function addEvent(data) {
+            // Skip duplicates based on sequence number
+            if (data.seq && seenSeqs.has(data.seq)) {
+                return;
+            }
+            if (data.seq) {
+                seenSeqs.add(data.seq);
+            }
+
+            eventCount++;
+            lastSeq = data.seq;
+
+            document.getElementById('eventCount').textContent = eventCount;
+            document.getElementById('lastSeq').textContent = data.seq || '-';
+
+            const feed = document.getElementById('feed');
+            const emptyState = document.getElementById('emptyState');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const event = document.createElement('div');
+            event.className = 'event ' + (data.type || 'unknown');
+
+            const time = data.time ? new Date(data.time).toLocaleTimeString() : 'Unknown';
+            const recordType = data.record_type ? data.record_type.split('.').pop() : '';
+            const action = data.action || '';
+            const content = data.content || '';
+
+            // Format record type for display
+            let recordTypeDisplay = '';
+            if (recordType) {
+                const typeLabels = {
+                    'post': 'Post',
+                    'like': 'Like',
+                    'repost': 'Repost',
+                    'follow': 'Follow',
+                    'profile': 'Profile Update'
+                };
+                recordTypeDisplay = typeLabels[recordType] || recordType;
+            }
+
+            event.innerHTML = `
+                <div class="event-header">
+                    <span class="event-type">${recordTypeDisplay || data.type || 'unknown'}</span>
+                    ${action ? `<span class="event-action ${action}">${action}</span>` : ''}
+                    <span class="event-seq">#${data.seq || '?'}</span>
+                </div>
+                <div class="event-did">${data.did || 'Unknown DID'}</div>
+                ${content ? `<div class="event-content">${escapeHtml(content)}</div>` : ''}
+                <div class="event-meta">
+                    <span>Host: ${data.host || 'unknown'}</span>
+                    <span>${time}</span>
+                </div>
+            `;
+
+            // Add to top of feed
+            feed.insertBefore(event, feed.firstChild);
+
+            // Keep only last 100 events in DOM
+            while (feed.children.length > 100) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        function clearFeed() {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = `
+                <div class="empty-state" id="emptyState">
+                    <div style="font-size: 48px;">📡</div>
+                    <p>Feed cleared</p>
+                </div>
+            `;
+            eventCount = 0;
+            seenSeqs.clear(); // Reset seen sequences
+            document.getElementById('eventCount').textContent = '0';
+        }
+    </script>
+</body>
+</html>
