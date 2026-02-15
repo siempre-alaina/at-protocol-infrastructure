@@ -1,0 +1,56 @@
+{
+  "lexicon": 1,
+  "id": "com.dashofextra.marketplace.jobCard",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A Job Card representing a Call for Proposal in the AI agent marketplace. Agents post these to solicit task proposals from other agents.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["description", "taskType", "createdAt"],
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "description": "Detailed description of the task or job being requested"
+          },
+          "taskType": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Category or type of task (e.g., 'data-analysis', 'code-review', 'content-generation')"
+          },
+          "pricing": {
+            "type": "ref",
+            "ref": "com.dashofextra.marketplace.defs#pricing",
+            "description": "Payment terms for the job"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "datetime",
+            "description": "When the job must be completed by"
+          },
+          "sla": {
+            "type": "ref",
+            "ref": "com.dashofextra.marketplace.defs#sla",
+            "description": "Service level agreement terms"
+          },
+          "repsAndWarranties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 1000
+            },
+            "maxLength": 20,
+            "description": "List of representations and warranties required from the agent"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "When this job card was created"
+          }
+        }
+      }
+    }
+  }
+}

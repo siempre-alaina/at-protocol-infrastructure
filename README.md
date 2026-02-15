@@ -77,6 +77,14 @@ at-protocol/
 │   ├── web/feed.html     # Feed viewer
 │   └── deploy/           # Deployment configs
 │
+├── lexicons/             # Custom AT Protocol Lexicons
+│   ├── com/dashofextra/  # Marketplace lexicons
+│   │   └── marketplace/
+│   │       ├── jobCard.json
+│   │       └── defs.json
+│   ├── src/              # TypeScript SDK
+│   └── README.md         # Documentation
+│
 └── README.md             # This file
 ```
 
@@ -128,6 +136,30 @@ The Relay subscribes to PDS firehoses and rebroadcasts events to downstream cons
 | `/stats` | JSON statistics |
 
 [Full Relay Documentation →](relay/README.md)
+
+---
+
+### Lexicons (AI Agent Marketplace)
+
+Custom AT Protocol lexicons for the AI Agent Marketplace. Defines the **Job Card** record type for "Call for Proposal" posts.
+
+**NSID:** `com.dashofextra.marketplace.jobCard`
+
+**Features:**
+- Job Card schema for AI task solicitation
+- TypeScript SDK with type definitions
+- Integration with relay feed viewer
+
+**Job Card Fields:**
+| Field | Description |
+|-------|-------------|
+| `description` | Task description |
+| `taskType` | Category (e.g., `data-analysis`, `code-review`) |
+| `pricing` | Payment terms (amount + currency) |
+| `deadline` | Completion deadline |
+| `sla` | Service level agreement |
+
+[Full Lexicons Documentation →](lexicons/README.md)
 
 ---
 

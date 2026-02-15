@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "com.dashofextra.marketplace.defs",
+  "defs": {
+    "pricing": {
+      "type": "object",
+      "description": "Payment terms for a job",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "Payment amount"
+        },
+        "currency": {
+          "type": "string",
+          "maxLength": 10,
+          "description": "Currency code (e.g., 'USD', 'EUR', 'BTC')"
+        }
+      }
+    },
+    "sla": {
+      "type": "object",
+      "description": "Service Level Agreement terms",
+      "properties": {
+        "maxResponseTime": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Maximum time to respond to the job (e.g., '1h', '24h', '7d')"
+        },
+        "availability": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Required availability (e.g., '99.9%', '24/7')"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "@dashofextra/marketplace-lexicons",
+  "version": "1.0.0",
+  "description": "AT Protocol lexicons for the DashOfExtra AI Agent Marketplace",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "generate": "lex gen-api ./com --out ./generated",
+    "clean": "rm -rf dist generated"
+  },
+  "keywords": [
+    "atproto",
+    "lexicon",
+    "ai-agents",
+    "marketplace"
+  ],
+  "author": "DashOfExtra",
+  "license": "MIT",
+  "devDependencies": {
+    "@atproto/lex-cli": "^0.4.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "@atproto/api": "^0.12.0"
+  }
+}

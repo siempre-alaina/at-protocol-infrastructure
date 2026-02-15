@@ -122,6 +122,9 @@
         .event.account {
             border-left-color: #10b981;
         }
+        .event.jobCard {
+            border-left-color: #f59e0b;
+        }
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -151,6 +154,9 @@
         }
         .event.account .event-type {
             background: #10b981;
+        }
+        .event.jobCard .event-type {
+            background: #f59e0b;
         }
         .event-seq {
             font-size: 12px;
@@ -343,6 +349,10 @@
             if (data.seq && seenSeqs.has(data.seq)) {
                 return;
             }
+            // Skip events with no content (e.g., delete events)
+            if (!data.content && data.action !== 'delete') {
+                return;
+            }
             if (data.seq) {
                 seenSeqs.add(data.seq);
             }
@@ -360,10 +370,12 @@
             }
 
             const event = document.createElement('div');
-            event.className = 'event ' + (data.type || 'unknown');
+            const recordType = data.record_type ? data.record_type.split('.').pop() : '';
+            // Use record type for styling if it's a Job Card, otherwise use event type
+            const eventClass = recordType === 'jobCard' ? 'jobCard' : (data.type || 'unknown');
+            event.className = 'event ' + eventClass;
 
             const time = data.time ? new Date(data.time).toLocaleTimeString() : 'Unknown';
-            const recordType = data.record_type ? data.record_type.split('.').pop() : '';
             const action = data.action || '';
             const content = data.content || '';
 
@@ -375,7 +387,8 @@
                     'like': 'Like',
                     'repost': 'Repost',
                     'follow': 'Follow',
-                    'profile': 'Profile Update'
+                    'profile': 'Profile Update',
+                    'jobCard': 'Job Card'
                 };
                 recordTypeDisplay = typeLabels[recordType] || recordType;
             }

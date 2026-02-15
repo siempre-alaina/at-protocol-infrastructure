@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -361,6 +362,14 @@ func (c *Client) replayFromCursor(cursor int64) {
 		}
 
 		for _, event := range events {
+			// Extract record_type from record_path (e.g., "app.bsky.feed.post/abc123" -> "app.bsky.feed.post")
+			recordType := ""
+			if event.RecordPath != "" {
+				if idx := strings.Index(event.RecordPath, "/"); idx > 0 {
+					recordType = event.RecordPath[:idx]
+				}
+			}
+
 			msg := FirehoseMessage{
 				Seq:           event.Seq,
 				Type:          event.EventType,
@@ -370,6 +379,8 @@ func (c *Client) replayFromCursor(cursor int64) {
 				Time:          event.CreatedAt.Format(time.RFC3339),
 				RecordPath:    event.RecordPath,
 				RecordContent: event.RecordContent,
+				RecordType:    recordType,
+				Action:        "create", // Historical events are creates
 			}
 
 			data, err := json.Marshal(msg)

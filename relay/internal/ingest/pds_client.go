@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -423,6 +424,103 @@ func (c *PDSClient) extractRecordContent(blocks []byte, recordCID cid.Cid, recor
 		if len(parts) > 0 {
 			return parts[0]
 		}
+	case "com.dashofextra.marketplace.jobCard":
+		// AI Agent Marketplace Job Card - Call for Proposal
+		var parts []string
+
+		// Task type
+		taskType := ""
+		if tt, ok := record["taskType"].(string); ok {
+			taskType = tt
+			parts = append(parts, fmt.Sprintf("Type: %s", tt))
+		}
+
+		// Description
+		desc := ""
+		if d, ok := record["description"].(string); ok {
+			desc = d
+		}
+
+		// Pricing - try multiple map types (CBOR can decode as different types)
+		if pricingRaw, exists := record["pricing"]; exists && pricingRaw != nil {
+			var amount float64
+			var currency string
+			var hasAmount, hasCurrency bool
+
+			// Try map[string]interface{} first
+			if pricing, ok := pricingRaw.(map[string]interface{}); ok {
+				if a, ok := pricing["amount"].(float64); ok {
+					amount, hasAmount = a, true
+				}
+				if c, ok := pricing["currency"].(string); ok {
+					currency, hasCurrency = c, true
+				}
+			}
+			// Try map[interface{}]interface{} (common CBOR output)
+			if pricing, ok := pricingRaw.(map[interface{}]interface{}); ok {
+				if a, ok := pricing["amount"].(float64); ok {
+					amount, hasAmount = a, true
+				} else if a, ok := pricing["amount"].(uint64); ok {
+					amount, hasAmount = float64(a), true
+				} else if a, ok := pricing["amount"].(int64); ok {
+					amount, hasAmount = float64(a), true
+				}
+				if c, ok := pricing["currency"].(string); ok {
+					currency, hasCurrency = c, true
+				}
+			}
+
+			if hasAmount && hasCurrency {
+				parts = append(parts, fmt.Sprintf("Price: %.0f %s", amount, currency))
+			} else if hasAmount {
+				parts = append(parts, fmt.Sprintf("Price: %.0f", amount))
+			}
+		}
+
+		// Deadline
+		if deadline, ok := record["deadline"].(string); ok {
+			parts = append(parts, fmt.Sprintf("Deadline: %s", deadline))
+		}
+
+		// SLA - try multiple map types
+		if slaRaw, exists := record["sla"]; exists && slaRaw != nil {
+			var slaParts []string
+
+			extractSLA := func(sla map[interface{}]interface{}) {
+				if rt, ok := sla["maxResponseTime"].(string); ok {
+					slaParts = append(slaParts, fmt.Sprintf("response: %s", rt))
+				}
+				if av, ok := sla["availability"].(string); ok {
+					slaParts = append(slaParts, fmt.Sprintf("availability: %s", av))
+				}
+			}
+
+			if sla, ok := slaRaw.(map[string]interface{}); ok {
+				if rt, ok := sla["maxResponseTime"].(string); ok {
+					slaParts = append(slaParts, fmt.Sprintf("response: %s", rt))
+				}
+				if av, ok := sla["availability"].(string); ok {
+					slaParts = append(slaParts, fmt.Sprintf("availability: %s", av))
+				}
+			} else if sla, ok := slaRaw.(map[interface{}]interface{}); ok {
+				extractSLA(sla)
+			}
+
+			if len(slaParts) > 0 {
+				parts = append(parts, fmt.Sprintf("SLA: %s", strings.Join(slaParts, ", ")))
+			}
+		}
+
+		// Format: [Job Card - taskType] Description | Details
+		header := "[Job Card]"
+		if taskType != "" {
+			header = fmt.Sprintf("[Job Card - %s]", taskType)
+		}
+
+		if len(parts) > 0 {
+			return fmt.Sprintf("%s %s | %s", header, desc, strings.Join(parts, " | "))
+		}
+		return fmt.Sprintf("%s %s", header, desc)
 	}
 
 	return ""
