@@ -1,6 +1,6 @@
 [Unit]
 Description=AT Protocol Relay
-Documentation=https://github.com/siempre-alaina/at-protocol
+Documentation=https://github.com/siempre-alaina/at-protocol-infrastructure
 After=network.target postgresql.service
 Requires=postgresql.service
 

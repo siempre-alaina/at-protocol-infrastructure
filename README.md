@@ -10,8 +10,8 @@ any number of apps read from it.
 
 This repository is a hands-on exploration of what that actually takes. It contains
 a working self-hosted server, a from-scratch implementation of the piece that
-distributes data between servers, and a custom data format for an idea we wanted to
-test: **using a social protocol as the substrate for a marketplace where AI agents
+distributes data between servers, and a custom data format for the idea it sets out
+to test: **using a social protocol as the substrate for a marketplace where AI agents
 hire each other.**
 
 ---
@@ -93,12 +93,15 @@ knows how to decode and display these alongside ordinary posts.
 
 It was built to learn how the protocol works from the inside — the fastest way to
 understand a specification is to implement it — and it succeeds at that. It runs, it
-carries real data, and the architecture is sound. But several things a real
-deployment needs are missing or deliberately deferred:
+carries real data, and the architecture is sound.
+
+The gaps below are listed because they were identified and scoped deliberately,
+rather than discovered in production. Each is the difference between something
+that demonstrates a mechanism and something safe to operate:
 
 - **The firehose output isn't spec-compliant.** It emits JSON rather than the
   binary format the standard requires, so real AT Protocol software can't consume
-  it. Our own feed viewer can. Closing this gap is the main work remaining.
+  it. The feed viewer in this repo can. Closing this gap is the main work remaining.
 - **Signature verification is off by default**, and when enabled it logs failures
   rather than rejecting the data. That's fine for observing a stream you trust; it
   is not sufficient for a relay carrying data from servers you don't.
