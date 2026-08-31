@@ -15,13 +15,13 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/siempre-alaina/at-protocol/relay/internal/config"
-	"github.com/siempre-alaina/at-protocol/relay/internal/firehose"
-	"github.com/siempre-alaina/at-protocol/relay/internal/ingest"
-	"github.com/siempre-alaina/at-protocol/relay/internal/metrics"
-	"github.com/siempre-alaina/at-protocol/relay/internal/storage"
-	"github.com/siempre-alaina/at-protocol/relay/internal/verify"
-	"github.com/siempre-alaina/at-protocol/relay/pkg/health"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/config"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/firehose"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/ingest"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/metrics"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/storage"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/verify"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/pkg/health"
 )
 
 var (

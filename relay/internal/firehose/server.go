@@ -13,9 +13,9 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 
-	"github.com/siempre-alaina/at-protocol/relay/internal/ingest"
-	"github.com/siempre-alaina/at-protocol/relay/internal/metrics"
-	"github.com/siempre-alaina/at-protocol/relay/internal/storage"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/ingest"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/metrics"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/storage"
 )
 
 var upgrader = websocket.Upgrader{

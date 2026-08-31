@@ -1,4 +1,4 @@
-module github.com/siempre-alaina/at-protocol/relay
+module github.com/siempre-alaina/at-protocol-infrastructure/relay
 
 go 1.25
 

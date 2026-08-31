@@ -7,8 +7,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/siempre-alaina/at-protocol/relay/internal/config"
-	"github.com/siempre-alaina/at-protocol/relay/internal/metrics"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/config"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/metrics"
 )
 
 // CursorStore interface for persisting cursor positions

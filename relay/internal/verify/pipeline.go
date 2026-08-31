@@ -10,9 +10,9 @@ import (
 	"github.com/bluesky-social/indigo/repo"
 	"github.com/rs/zerolog/log"
 
-	"github.com/siempre-alaina/at-protocol/relay/internal/config"
-	"github.com/siempre-alaina/at-protocol/relay/internal/ingest"
-	"github.com/siempre-alaina/at-protocol/relay/internal/metrics"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/config"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/ingest"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/metrics"
 )
 
 // VerificationResult contains the result of verifying an event

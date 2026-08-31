@@ -9,8 +9,8 @@ import (
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/rs/zerolog/log"
 
-	"github.com/siempre-alaina/at-protocol/relay/internal/config"
-	"github.com/siempre-alaina/at-protocol/relay/internal/metrics"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/config"
+	"github.com/siempre-alaina/at-protocol-infrastructure/relay/internal/metrics"
 )
 
 // IdentityResolver handles DID resolution with caching
