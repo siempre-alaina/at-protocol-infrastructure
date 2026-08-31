@@ -128,7 +128,7 @@ ssh root@<YOUR_SERVER_IP> 'sudo -u postgres psql -d relay -c "SELECT hostname, s
 | Phase | Status | Description |
 |-------|--------|-------------|
 | Phase 1 | Complete | Foundation (config, logging, health) |
-| Phase 2 | Complete | Ingest Pipeline (WebSocket client, manager, backpressure) |
+| Phase 2 | Complete | Ingest Pipeline (WebSocket client, connection manager) |
 | Phase 3 | Complete | Verification (DID resolution, signatures) |
 | Phase 4 | Complete | Storage (PostgreSQL events, cursor persistence) |
 | Phase 5 | Complete | Firehose broadcast (WebSocket server, client management) |

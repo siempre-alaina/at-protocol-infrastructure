@@ -132,16 +132,3 @@ func (h *Handler) runChecks() Response {
 		Timestamp: time.Now().UTC(),
 	}
 }
-
-// DatabaseChecker creates a checker for database connectivity
-func DatabaseChecker(pingFunc func() error) Checker {
-	return func() CheckResult {
-		if err := pingFunc(); err != nil {
-			return CheckResult{
-				Status:  StatusUnhealthy,
-				Message: err.Error(),
-			}
-		}
-		return CheckResult{Status: StatusHealthy}
-	}
-}

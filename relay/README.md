@@ -1,16 +1,26 @@
 # AT Protocol Relay
 
-A production-ready AT Protocol relay implementation in Go. Subscribes to PDS (Personal Data Server) firehoses and rebroadcasts events to downstream consumers like feed generators, search indexers, and other applications.
+A prototype AT Protocol relay implementation in Go. Subscribes to PDS (Personal
+Data Server) firehoses and rebroadcasts events to downstream consumers like feed
+generators, search indexers, and other applications.
 
-## Live Instance
+> **Prototype — not production software.** The firehose output is not yet
+> spec-compliant (JSON rather than binary DAG-CBOR), signature verification is
+> off by default and non-blocking when enabled, and there are no tests. See
+> "Status: this is a prototype" in the [root README](../README.md) for the full
+> list of known gaps.
 
-**Production URL:** https://relay.service.dashofextra.com
+## Reference deployment
 
-| Endpoint | URL |
-|----------|-----|
-| Health Check | https://relay.service.dashofextra.com/xrpc/_health |
-| Firehose | `wss://relay.service.dashofextra.com/xrpc/com.atproto.sync.subscribeRepos` |
-| Feed Viewer | https://relay.service.dashofextra.com/feed |
+The relay previously ran at `relay.service.dashofextra.com`. **That instance has
+been decommissioned** — the URLs and server addresses throughout this document are
+kept as a worked example of a real deployment, not as live endpoints.
+
+| Endpoint | Path |
+|----------|------|
+| Health Check | `/xrpc/_health` |
+| Firehose | `wss://<your-host>/xrpc/com.atproto.sync.subscribeRepos` |
+| Feed Viewer | `/feed` |
 
 ## Features
 

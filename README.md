@@ -1,253 +1,149 @@
 # AT Protocol Infrastructure
 
-Self-hosted AT Protocol (Bluesky) infrastructure including a Personal Data Server (PDS) and Relay.
+An experiment in running your own corner of a social network.
 
-## Live Instance
+Most social platforms keep three things welded together: your identity, your data,
+and the app you view them through. Leave the platform and you lose all three. The
+[AT Protocol](https://atproto.com) — the open standard underneath Bluesky — pulls
+them apart, so your identity and your posts can live on a server you control while
+any number of apps read from it.
 
-| Component | URL | Status |
-|-----------|-----|--------|
-| **PDS** | https://service.dashofextra.com | Running |
-| **Relay** | https://relay.service.dashofextra.com | Running |
-| **Feed Viewer** | https://relay.service.dashofextra.com/feed | Running |
-| **Bluesky Profile** | https://bsky.app/profile/alaina.service.dashofextra.com | Active |
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        AT Protocol Network                           │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│   ┌─────────────────┐         ┌─────────────────┐                   │
-│   │   Bluesky App   │         │  Other Clients  │                   │
-│   │   (bsky.app)    │         │  (Feed Gens)    │                   │
-│   └────────┬────────┘         └────────┬────────┘                   │
-│            │                           │                             │
-│            │ Read posts                │ Subscribe to firehose       │
-│            ▼                           ▼                             │
-│   ┌─────────────────────────────────────────────────────────┐       │
-│   │                    Your Infrastructure                   │       │
-│   │  ┌─────────────────┐       ┌─────────────────────────┐  │       │
-│   │  │      PDS        │       │         Relay           │  │       │
-│   │  │  (Port 3000)    │──────▶│      (Port 2470)        │  │       │
-│   │  │                 │       │                         │  │       │
-│   │  │ • Store posts   │       │ • Aggregate events      │  │       │
-│   │  │ • User accounts │       │ • Broadcast firehose    │  │       │
-│   │  │ • DID identity  │       │ • Extract post content  │  │       │
-│   │  └─────────────────┘       └─────────────────────────┘  │       │
-│   │         │                            │                   │       │
-│   │         │                            │                   │       │
-│   │         ▼                            ▼                   │       │
-│   │  ┌─────────────┐            ┌─────────────────┐         │       │
-│   │  │   SQLite    │            │   PostgreSQL    │         │       │
-│   │  │   + Blobs   │            │   (Sequences)   │         │       │
-│   │  └─────────────┘            └─────────────────┘         │       │
-│   └─────────────────────────────────────────────────────────┘       │
-│                                                                      │
-│            │                           │                             │
-│            ▼                           ▼                             │
-│   ┌─────────────────┐         ┌─────────────────┐                   │
-│   │  plc.directory  │         │   bsky.network  │                   │
-│   │  (DID Registry) │         │   (Main Relay)  │                   │
-│   └─────────────────┘         └─────────────────┘                   │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-## Repository Structure
-
-```
-at-protocol/
-├── pds-server/           # Personal Data Server
-│   ├── CLAUDE.md         # AI assistant guidance
-│   ├── README.md         # Documentation
-│   └── pds-server/       # Configuration files
-│       ├── setup.sh      # Server provisioning
-│       └── server-config/
-│           ├── index.js      # PDS entry point
-│           ├── pds.env       # Environment template
-│           ├── pds.service   # systemd unit
-│           └── nginx-pds.conf
-│
-├── relay/                # AT Protocol Relay
-│   ├── CLAUDE.md         # AI assistant guidance
-│   ├── README.md         # Documentation
-│   ├── cmd/relay/        # Go application
-│   ├── internal/         # Core packages
-│   ├── web/feed.html     # Feed viewer
-│   └── deploy/           # Deployment configs
-│
-├── lexicons/             # Custom AT Protocol Lexicons
-│   ├── com/dashofextra/  # Marketplace lexicons
-│   │   └── marketplace/
-│   │       ├── jobCard.json
-│   │       └── defs.json
-│   ├── src/              # TypeScript SDK
-│   └── README.md         # Documentation
-│
-└── README.md             # This file
-```
-
-## Components
-
-### PDS (Personal Data Server)
-
-The PDS stores your identity, posts, and social graph. It's the source of truth for your data on the AT Protocol network.
-
-**Technology:** Node.js + `@atproto/pds` package
-
-**Features:**
-- Self-sovereign identity (DID)
-- Post storage and retrieval
-- Federated with Bluesky network
-- Subdomain handles (*.service.dashofextra.com)
-
-**Endpoints:**
-| Endpoint | Description |
-|----------|-------------|
-| `/xrpc/_health` | Health check |
-| `/xrpc/com.atproto.sync.subscribeRepos` | Firehose (WebSocket) |
-| `/xrpc/com.atproto.repo.listRecords` | List records |
-
-[Full PDS Documentation →](pds-server/pds-server/README.md)
+This repository is a hands-on exploration of what that actually takes. It contains
+a working self-hosted server, a from-scratch implementation of the piece that
+distributes data between servers, and a custom data format for an idea we wanted to
+test: **using a social protocol as the substrate for a marketplace where AI agents
+hire each other.**
 
 ---
 
-### Relay
+## The concepts, in plain English
 
-The Relay subscribes to PDS firehoses and rebroadcasts events to downstream consumers. It provides global sequencing and post content extraction.
+If you're new to the protocol, these five terms are most of it.
 
-**Technology:** Go + PostgreSQL
+| Term | What it actually is |
+|---|---|
+| **PDS** (Personal Data Server) | Your own filing cabinet. It stores your posts and holds your account. Ours runs the official Bluesky server software. |
+| **DID** (Decentralized Identifier) | Your identity, as a portable ID that isn't owned by any company. Because it's separate from the PDS, you can move servers and keep your followers. |
+| **Firehose** | A live stream of everything happening on a server, published as it happens. Anything that wants to react to new posts drinks from it. |
+| **Relay** | A switchboard. It subscribes to many PDS firehoses, merges them into one ordered stream, and rebroadcasts it. Without relays, every app would have to connect to every server individually. |
+| **Lexicon** | A schema. It defines what a record looks like — a post has text, a like points at something. Anyone can define new record types, which is what makes the protocol extensible rather than fixed. |
 
-**Features:**
-- Multi-PDS support
-- Global event sequencing
-- Post content extraction (CBOR decoding)
-- Web-based feed viewer
-- Cursor-based replay
-- Prometheus metrics
-
-**Endpoints:**
-| Endpoint | Description |
-|----------|-------------|
-| `/xrpc/_health` | Health check |
-| `/xrpc/com.atproto.sync.subscribeRepos` | Firehose (WebSocket) |
-| `/feed` | Web feed viewer |
-| `/stats` | JSON statistics |
-
-[Full Relay Documentation →](relay/README.md)
+The short version: **a PDS holds your data, a relay moves it around, and lexicons
+describe its shape.**
 
 ---
 
-### Lexicons (AI Agent Marketplace)
+## How the pieces fit
 
-Custom AT Protocol lexicons for the AI Agent Marketplace. Defines the **Job Card** record type for "Call for Proposal" posts.
+```
+      ┌──────────────┐        ┌──────────────┐
+      │  Bluesky App │        │  Other apps  │
+      └──────┬───────┘        └──────┬───────┘
+             │ read posts            │ subscribe to firehose
+             ▼                       ▼
+   ┌─────────────────────────────────────────────┐
+   │              Your infrastructure            │
+   │                                             │
+   │   ┌───────────┐         ┌───────────────┐   │
+   │   │    PDS    │────────▶│     Relay     │   │
+   │   │           │  events │               │   │
+   │   │ • posts   │         │ • merges      │   │
+   │   │ • account │         │ • orders      │   │
+   │   │ • DID     │         │ • rebroadcasts│   │
+   │   └───────────┘         └───────┬───────┘   │
+   │                                 │           │
+   │                         ┌───────▼───────┐   │
+   │                         │  Feed viewer  │   │
+   │                         │  (web page)   │   │
+   │                         └───────────────┘   │
+   └─────────────────────────────────────────────┘
+```
 
-**NSID:** `com.dashofextra.marketplace.jobCard`
-
-**Features:**
-- Job Card schema for AI task solicitation
-- TypeScript SDK with type definitions
-- Integration with relay feed viewer
-
-**Job Card Fields:**
-| Field | Description |
-|-------|-------------|
-| `description` | Task description |
-| `taskType` | Category (e.g., `data-analysis`, `code-review`) |
-| `pricing` | Payment terms (amount + currency) |
-| `deadline` | Completion deadline |
-| `sla` | Service level agreement |
-
-[Full Lexicons Documentation →](lexicons/README.md)
+A post is written to the PDS. The PDS announces it on its firehose. The relay picks
+it up, gives it a global sequence number, saves it, and pushes it to anyone
+listening — including the small web page in this repo that renders the stream live.
 
 ---
 
-## Quick Start
+## What's in this repository
 
-### Check Health
+**`pds-server/`** — Deployment setup for a Personal Data Server: an automated
+install script, web server config, a service definition, and a step-by-step build
+guide. The PDS software itself is Bluesky's; this is everything around it needed to
+get one running on a plain Linux box.
+
+**`relay/`** — A relay written from scratch in Go (~2,800 lines). This is the
+substantial piece. It connects to one or more PDS firehoses, verifies cryptographic
+signatures on incoming data, assigns global sequence numbers via PostgreSQL, lets
+clients resume from any point in the stream, exposes operational metrics, and serves
+a browser-based feed viewer.
+
+**`lexicons/`** — A custom record type, `com.dashofextra.marketplace.jobCard`. It
+describes a job posting: what the task is, what it pays, when it's due, and what
+service levels are expected. The idea being tested is that if AI agents each have a
+protocol identity, they can advertise work and bid on it over open social
+infrastructure rather than through a private API owned by one company. The relay
+knows how to decode and display these alongside ordinary posts.
+
+---
+
+## Status: this is a prototype
+
+**It is not production software, and it should not be deployed as-is.**
+
+It was built to learn how the protocol works from the inside — the fastest way to
+understand a specification is to implement it — and it succeeds at that. It runs, it
+carries real data, and the architecture is sound. But several things a real
+deployment needs are missing or deliberately deferred:
+
+- **The firehose output isn't spec-compliant.** It emits JSON rather than the
+  binary format the standard requires, so real AT Protocol software can't consume
+  it. Our own feed viewer can. Closing this gap is the main work remaining.
+- **Signature verification is off by default**, and when enabled it logs failures
+  rather than rejecting the data. That's fine for observing a stream you trust; it
+  is not sufficient for a relay carrying data from servers you don't.
+- **There are no automated tests** and no continuous integration.
+- **Several endpoints lack authentication and rate limiting**, and there are known
+  concurrency bugs that can crash the process under load.
+- **Stored data grows without bound** — there's no retention or cleanup policy.
+
+Treat this as a reference implementation and a learning artifact. Read it, run it
+locally, borrow from it. Don't put it on the open internet.
+
+The deployment documentation throughout describes a live instance that has since
+been decommissioned. URLs and server addresses in those guides are historical.
+
+---
+
+## Running it locally
+
+The relay needs Go 1.25+ and, optionally, PostgreSQL 16 for persistence.
 
 ```bash
-# PDS
-curl https://service.dashofextra.com/xrpc/_health
-
-# Relay
-curl https://relay.service.dashofextra.com/xrpc/_health
+cd relay
+go build -o relay ./cmd/relay
+cp relay.yaml my-config.yaml     # then edit: set a PDS host and a database password
+./relay --config my-config.yaml --debug
 ```
 
-### View Feed
+It will connect to whatever PDS hosts you list under `ingest.initial_hosts` and
+stream their events. Add `--db` to persist to PostgreSQL, and `--verify` to turn on
+signature checking. `relay/README.md` covers configuration, endpoints, and
+deployment in full; `pds-server/pds-server/pds-implementation-plan.md` walks through
+standing up a PDS from a bare server.
 
-Visit https://relay.service.dashofextra.com/feed to see real-time posts.
+## Configuration and secrets
 
-### Connect to Firehose
-
-```javascript
-// Connect to relay firehose
-const ws = new WebSocket('wss://relay.service.dashofextra.com/xrpc/com.atproto.sync.subscribeRepos');
-
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  console.log(`[${data.seq}] ${data.record_type}: ${data.content}`);
-};
-```
-
-## Server Details
-
-Both components run on the same DigitalOcean droplet:
-
-| Setting | Value |
-|---------|-------|
-| **Server IP** | <YOUR_SERVER_IP> |
-| **PDS Domain** | service.dashofextra.com |
-| **Relay Domain** | relay.service.dashofextra.com |
-| **PDS Port** | 3000 (internal) |
-| **Relay Port** | 2470 (internal) |
-| **Metrics Port** | 9091 |
-
-### Server Management
+No credentials are stored in this repository. Files ending in `.example` are
+templates — copy them, remove the suffix, and fill in your own values. The real
+files are gitignored.
 
 ```bash
-# SSH into server
-ssh root@<YOUR_SERVER_IP>
-
-# Check services
-systemctl status pds
-systemctl status relay
-
-# View logs
-journalctl -u pds -f
-journalctl -u relay -f
+cp pds-server/pds-server/server-config/pds.env.example \
+   pds-server/pds-server/server-config/pds.env
 ```
 
-## Data Flow
-
-1. **User posts on Bluesky** → stored in PDS
-2. **PDS broadcasts event** → via WebSocket firehose
-3. **Relay receives event** → extracts content, assigns sequence number
-4. **Relay stores in PostgreSQL** → for replay capability
-5. **Relay broadcasts to clients** → feed generators, viewers, etc.
-
-## Key Technologies
-
-| Component | Technology |
-|-----------|------------|
-| PDS | Node.js 22, @atproto/pds |
-| Relay | Go 1.21, gorilla/websocket |
-| PDS Storage | SQLite + disk blobs |
-| Relay Storage | PostgreSQL 16 |
-| Process Manager | systemd |
-| Reverse Proxy | nginx |
-| TLS | Let's Encrypt (wildcard) |
-
-## License
-
-MIT
-
-## Acknowledgments
-
-Built on the [AT Protocol](https://atproto.com/) by Bluesky.
-
-Key dependencies:
-- [@atproto/pds](https://github.com/bluesky-social/atproto) - Official PDS package
-- [indigo](https://github.com/bluesky-social/indigo) - Bluesky's Go SDK
-- [gorilla/websocket](https://github.com/gorilla/websocket) - WebSocket implementation
+One warning worth repeating: `PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX` is the
+private key controlling your identity. Anyone who has it can take over your DID
+permanently, and it cannot be recovered if lost. Generate it, back it up offline,
+and never commit it.

@@ -70,7 +70,10 @@ func main() {
 
 	// Initialize database (if enabled)
 	var db *storage.DB
-	var cursorStore *storage.CursorStore
+	// Declared as the interface, not *storage.CursorStore: a nil concrete pointer
+	// stored in an interface is non-nil, which made the manager call GetCursor on
+	// nil and panic at startup whenever --db was omitted.
+	var cursorStore ingest.CursorStore
 	var eventStore *storage.EventStore
 	if *enableDB {
 		connMaxLifetime, err := time.ParseDuration(cfg.Database.ConnMaxLifetime)
@@ -332,9 +335,9 @@ func main() {
 		if eventStore != nil {
 			seq, _ := eventStore.GetCurrentSeq(r.Context())
 			stats["database"] = map[string]interface{}{
-				"enabled":         true,
-				"current_seq":     seq,
-				"events_stored":   seq, // seq starts at 1
+				"enabled":       true,
+				"current_seq":   seq,
+				"events_stored": seq, // seq starts at 1
 			}
 		} else {
 			stats["database"] = map[string]interface{}{

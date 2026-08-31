@@ -77,35 +77,6 @@ func (db *DB) Migrate(ctx context.Context) error {
 		`CREATE INDEX IF NOT EXISTS idx_events_did ON events(did)`,
 		`CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_events_host_id ON events(host_id)`,
-
-		// Repos table - tracks repo state
-		`CREATE TABLE IF NOT EXISTS repos (
-			id SERIAL PRIMARY KEY,
-			did TEXT UNIQUE NOT NULL,
-			head_cid TEXT,
-			signing_key TEXT,
-			last_event_seq BIGINT,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-		)`,
-
-		// Create index on DID
-		`CREATE INDEX IF NOT EXISTS idx_repos_did ON repos(did)`,
-
-		// Blocks table - CAR block index
-		`CREATE TABLE IF NOT EXISTS blocks (
-			id SERIAL PRIMARY KEY,
-			cid TEXT UNIQUE NOT NULL,
-			repo_id INTEGER REFERENCES repos(id),
-			car_path TEXT NOT NULL,
-			car_offset BIGINT NOT NULL,
-			block_size INTEGER NOT NULL,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-		)`,
-
-		// Create index on CID
-		`CREATE INDEX IF NOT EXISTS idx_blocks_cid ON blocks(cid)`,
-		`CREATE INDEX IF NOT EXISTS idx_blocks_repo_id ON blocks(repo_id)`,
 	}
 
 	for _, migration := range migrations {
@@ -150,27 +121,6 @@ func (db *DB) GetHostCursor(ctx context.Context, hostname string) (int64, error)
 		return 0, err
 	}
 	return cursor.Int64, nil
-}
-
-// GetActiveHosts returns all active hosts
-func (db *DB) GetActiveHosts(ctx context.Context) ([]string, error) {
-	rows, err := db.QueryContext(ctx, `
-		SELECT hostname FROM hosts WHERE status = 'active'
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var hosts []string
-	for rows.Next() {
-		var hostname string
-		if err := rows.Scan(&hostname); err != nil {
-			return nil, err
-		}
-		hosts = append(hosts, hostname)
-	}
-	return hosts, rows.Err()
 }
 
 // Event operations
@@ -223,40 +173,6 @@ func (db *DB) GetCurrentSeq(ctx context.Context) (int64, error) {
 	return seq, err
 }
 
-// Repo operations
-
-// UpsertRepo adds or updates a repo
-func (db *DB) UpsertRepo(ctx context.Context, did, headCID, signingKey string, lastEventSeq int64) error {
-	_, err := db.ExecContext(ctx, `
-		INSERT INTO repos (did, head_cid, signing_key, last_event_seq)
-		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (did) DO UPDATE SET
-			head_cid = $2,
-			signing_key = $3,
-			last_event_seq = $4,
-			updated_at = NOW()
-	`, did, headCID, signingKey, lastEventSeq)
-	return err
-}
-
-// GetRepo returns repo information
-func (db *DB) GetRepo(ctx context.Context, did string) (*Repo, error) {
-	var r Repo
-	var headCID, signingKey sql.NullString
-	var lastEventSeq sql.NullInt64
-	err := db.QueryRowContext(ctx, `
-		SELECT id, did, head_cid, signing_key, last_event_seq, created_at, updated_at
-		FROM repos WHERE did = $1
-	`, did).Scan(&r.ID, &r.DID, &headCID, &signingKey, &lastEventSeq, &r.CreatedAt, &r.UpdatedAt)
-	if err != nil {
-		return nil, err
-	}
-	r.HeadCID = headCID.String
-	r.SigningKey = signingKey.String
-	r.LastEventSeq = lastEventSeq.Int64
-	return &r, nil
-}
-
 // Event represents a stored event
 type Event struct {
 	Seq           int64
@@ -268,17 +184,6 @@ type Event struct {
 	RecordPath    string
 	RecordContent string
 	CreatedAt     time.Time
-}
-
-// Repo represents a stored repo
-type Repo struct {
-	ID           int
-	DID          string
-	HeadCID      string
-	SigningKey   string
-	LastEventSeq int64
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
 }
 
 // CursorStore implements the ingest.CursorStore interface

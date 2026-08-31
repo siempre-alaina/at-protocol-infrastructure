@@ -22,16 +22,16 @@ type EventHandler func(ctx context.Context, event Event) error
 
 // Manager orchestrates connections to multiple PDSs
 type Manager struct {
-	cfg           config.IngestConfig
-	clients       map[string]*PDSClient
-	eventChan     chan Event
-	handler       EventHandler
-	cursorStore   CursorStore
-	metrics       *metrics.Metrics
-	mu            sync.RWMutex
-	ctx           context.Context
-	cancel        context.CancelFunc
-	wg            sync.WaitGroup
+	cfg         config.IngestConfig
+	clients     map[string]*PDSClient
+	eventChan   chan Event
+	handler     EventHandler
+	cursorStore CursorStore
+	metrics     *metrics.Metrics
+	mu          sync.RWMutex
+	ctx         context.Context
+	cancel      context.CancelFunc
+	wg          sync.WaitGroup
 }
 
 // NewManager creates a new ingest manager
@@ -137,29 +137,6 @@ func (m *Manager) AddHost(hostname string) error {
 
 	if m.metrics != nil {
 		m.metrics.PDSConnections.WithLabelValues(hostname, "connecting").Set(1)
-	}
-
-	return nil
-}
-
-// RemoveHost removes a PDS host
-func (m *Manager) RemoveHost(hostname string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	client, exists := m.clients[hostname]
-	if !exists {
-		return nil
-	}
-
-	client.Stop()
-	delete(m.clients, hostname)
-
-	log.Info().Str("host", hostname).Msg("Removed PDS host")
-
-	if m.metrics != nil {
-		m.metrics.PDSConnections.WithLabelValues(hostname, "connected").Set(0)
-		m.metrics.PDSConnections.WithLabelValues(hostname, "connecting").Set(0)
 	}
 
 	return nil

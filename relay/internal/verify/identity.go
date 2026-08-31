@@ -29,10 +29,10 @@ func NewIdentityResolver(cfg config.IdentityConfig, m *metrics.Metrics) *Identit
 	// Wrap with caching directory
 	cachedDir := identity.NewCacheDirectory(
 		&baseDir,
-		cfg.CacheSize,       // capacity
-		cfg.CacheTTL,        // hit TTL
-		time.Minute*5,       // error TTL (cache failures briefly)
-		time.Minute*30,      // invalid handle TTL
+		cfg.CacheSize,  // capacity
+		cfg.CacheTTL,   // hit TTL
+		time.Minute*5,  // error TTL (cache failures briefly)
+		time.Minute*30, // invalid handle TTL
 	)
 
 	log.Info().
@@ -87,44 +87,4 @@ func (r *IdentityResolver) ResolveIdentity(ctx context.Context, did string) (*id
 	}
 
 	return ident, nil
-}
-
-// GetPublicKey extracts the signing public key from an identity
-func (r *IdentityResolver) GetPublicKey(ident *identity.Identity) ([]byte, error) {
-	// Get the public key from the identity
-	pubKey, err := ident.PublicKey()
-	if err != nil {
-		return nil, fmt.Errorf("identity has no public key: %w", err)
-	}
-
-	// Get the raw bytes from the public key
-	return pubKey.Bytes(), nil
-}
-
-// GetPDSEndpoint returns the PDS endpoint URL for an identity
-func (r *IdentityResolver) GetPDSEndpoint(ident *identity.Identity) (string, error) {
-	if ident.PDSEndpoint() == "" {
-		return "", fmt.Errorf("identity has no PDS endpoint")
-	}
-	return ident.PDSEndpoint(), nil
-}
-
-// ValidateHandle checks if a handle matches the DID
-func (r *IdentityResolver) ValidateHandle(ctx context.Context, handle, did string) error {
-	// Parse the handle string into syntax.Handle
-	parsedHandle, err := syntax.ParseHandle(handle)
-	if err != nil {
-		return fmt.Errorf("invalid handle format: %w", err)
-	}
-
-	ident, err := r.directory.LookupHandle(ctx, parsedHandle)
-	if err != nil {
-		return fmt.Errorf("failed to resolve handle %s: %w", handle, err)
-	}
-
-	if ident.DID.String() != did {
-		return fmt.Errorf("handle %s resolves to %s, expected %s", handle, ident.DID.String(), did)
-	}
-
-	return nil
 }

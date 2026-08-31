@@ -1,1 +1,10 @@
 .DS_Store
+
+# Secrets — never commit these. Use the .example templates instead.
+.server-credentials
+*.env
+!*.env.example
+pds.env
+relay.env
+*.key
+*.pem

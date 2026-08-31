@@ -28,12 +28,12 @@ var upgrader = websocket.Upgrader{
 
 // Client represents a connected firehose subscriber
 type Client struct {
-	id         uint64
-	conn       *websocket.Conn
-	send       chan []byte
-	server     *Server
-	cursor     int64
-	remoteAddr string
+	id          uint64
+	conn        *websocket.Conn
+	send        chan []byte
+	server      *Server
+	cursor      int64
+	remoteAddr  string
 	connectedAt time.Time
 }
 
@@ -421,10 +421,10 @@ func (s *Server) GetClientInfo() []map[string]interface{} {
 	clients := make([]map[string]interface{}, 0, len(s.clients))
 	for _, client := range s.clients {
 		clients = append(clients, map[string]interface{}{
-			"id":           client.id,
-			"remote_addr":  client.remoteAddr,
-			"cursor":       client.cursor,
-			"connected_at": client.connectedAt,
+			"id":            client.id,
+			"remote_addr":   client.remoteAddr,
+			"cursor":        client.cursor,
+			"connected_at":  client.connectedAt,
 			"connected_for": time.Since(client.connectedAt).String(),
 		})
 	}

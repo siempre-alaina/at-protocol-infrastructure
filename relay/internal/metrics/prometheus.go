@@ -11,14 +11,14 @@ import (
 // Metrics holds all Prometheus metrics for the relay
 type Metrics struct {
 	// Ingest metrics
-	EventsReceived    *prometheus.CounterVec
-	EventsProcessed   *prometheus.CounterVec
-	EventsDropped     *prometheus.CounterVec
-	IngestLag         *prometheus.GaugeVec
-	PDSConnections    *prometheus.GaugeVec
-	PDSReconnects     *prometheus.CounterVec
-	BufferSize        prometheus.Gauge
-	BufferCapacity    prometheus.Gauge
+	EventsReceived  *prometheus.CounterVec
+	EventsProcessed *prometheus.CounterVec
+	EventsDropped   *prometheus.CounterVec
+	IngestLag       *prometheus.GaugeVec
+	PDSConnections  *prometheus.GaugeVec
+	PDSReconnects   *prometheus.CounterVec
+	BufferSize      prometheus.Gauge
+	BufferCapacity  prometheus.Gauge
 
 	// Verification metrics
 	VerificationTotal    *prometheus.CounterVec

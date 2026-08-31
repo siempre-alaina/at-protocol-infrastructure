@@ -11,10 +11,8 @@ import (
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`
-	Storage  StorageConfig  `mapstructure:"storage"`
 	Ingest   IngestConfig   `mapstructure:"ingest"`
 	Identity IdentityConfig `mapstructure:"identity"`
-	Firehose FirehoseConfig `mapstructure:"firehose"`
 	Metrics  MetricsConfig  `mapstructure:"metrics"`
 }
 
@@ -30,10 +28,6 @@ type DatabaseConfig struct {
 	ConnMaxLifetime string `mapstructure:"conn_max_lifetime"`
 }
 
-type StorageConfig struct {
-	CarDir string `mapstructure:"car_dir"`
-}
-
 type IngestConfig struct {
 	InitialHosts      []string      `mapstructure:"initial_hosts"`
 	WorkerCount       int           `mapstructure:"worker_count"`
@@ -46,11 +40,6 @@ type IdentityConfig struct {
 	PLCURL    string        `mapstructure:"plc_url"`
 	CacheSize int           `mapstructure:"cache_size"`
 	CacheTTL  time.Duration `mapstructure:"cache_ttl"`
-}
-
-type FirehoseConfig struct {
-	MaxClients       int `mapstructure:"max_clients"`
-	ClientBufferSize int `mapstructure:"client_buffer_size"`
 }
 
 type MetricsConfig struct {
@@ -105,13 +94,10 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("server.port", 2470)
 
 	// Database defaults
-	v.SetDefault("database.postgres_url", "postgres://relay:relay@localhost/relay?sslmode=disable")
+	v.SetDefault("database.postgres_url", "postgres://relay:CHANGE_ME@localhost/relay?sslmode=disable")
 	v.SetDefault("database.max_open_conns", 25)
 	v.SetDefault("database.max_idle_conns", 5)
 	v.SetDefault("database.conn_max_lifetime", "5m")
-
-	// Storage defaults
-	v.SetDefault("storage.car_dir", "/srv/relay/data/cars")
 
 	// Ingest defaults
 	v.SetDefault("ingest.initial_hosts", []string{})
@@ -124,10 +110,6 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("identity.plc_url", "https://plc.directory")
 	v.SetDefault("identity.cache_size", 100000)
 	v.SetDefault("identity.cache_ttl", "1h")
-
-	// Firehose defaults
-	v.SetDefault("firehose.max_clients", 1000)
-	v.SetDefault("firehose.client_buffer_size", 1000)
 
 	// Metrics defaults
 	v.SetDefault("metrics.enabled", true)
@@ -142,10 +124,6 @@ func (c *Config) Validate() error {
 
 	if c.Database.PostgresURL == "" {
 		return fmt.Errorf("database.postgres_url is required")
-	}
-
-	if c.Storage.CarDir == "" {
-		return fmt.Errorf("storage.car_dir is required")
 	}
 
 	if c.Ingest.WorkerCount <= 0 {

@@ -6,13 +6,10 @@ server:
   port: 2470
 
 database:
-  postgres_url: "postgres://relay:relay@localhost/relay?sslmode=disable"
+  postgres_url: "postgres://relay:CHANGE_ME@localhost/relay?sslmode=disable"
   max_open_conns: 25
   max_idle_conns: 5
   conn_max_lifetime: "5m"
-
-storage:
-  car_dir: "/srv/relay/data/cars"
 
 ingest:
   initial_hosts:
@@ -27,10 +24,6 @@ identity:
   plc_url: "https://plc.directory"
   cache_size: 100000
   cache_ttl: "1h"
-
-firehose:
-  max_clients: 1000
-  client_buffer_size: 1000
 
 metrics:
   enabled: true

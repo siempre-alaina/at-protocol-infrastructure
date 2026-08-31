@@ -92,13 +92,6 @@ func (c *PDSClient) Stop() {
 	c.mu.Unlock()
 }
 
-// IsConnected returns whether the client is currently connected
-func (c *PDSClient) IsConnected() bool {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.connected
-}
-
 // GetCursor returns the current cursor position
 func (c *PDSClient) GetCursor() int64 {
 	c.mu.RLock()

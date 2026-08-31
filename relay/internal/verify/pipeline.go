@@ -167,24 +167,3 @@ func (p *Pipeline) recordFailure(reason string) {
 func (p *Pipeline) Stats() (verified, failed int64) {
 	return p.verified, p.failed
 }
-
-// VerifyAsync verifies events asynchronously and returns results via channel
-func (p *Pipeline) VerifyAsync(ctx context.Context, events <-chan ingest.Event, results chan<- VerificationResult, workers int) {
-	for i := 0; i < workers; i++ {
-		go func(workerID int) {
-			for event := range events {
-				select {
-				case <-ctx.Done():
-					return
-				default:
-					result := p.Verify(ctx, event)
-					select {
-					case results <- result:
-					case <-ctx.Done():
-						return
-					}
-				}
-			}
-		}(i)
-	}
-}
